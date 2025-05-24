@@ -1,0 +1,117 @@
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+*.lcov
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+database.db
+dev.db
+test.db
+
+# Database migrations (if using Sequelize CLI)
+migrations/*.js
+!migrations/README.md
+
+# Uploads
+uploads/
+public/uploads/
+tmp/
+temp/
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+!ssl/README.md
+
+# Redis dump
+dump.rdb
+
+# PM2
+.pm2/
+
+# Docker
+Dockerfile.local
+docker-compose.override.yml
+
+# Backup files
+*.backup
+*.bak
+*.sql.gz
+
+# Test coverage
+coverage/
+
+# Jest
+jest_coverage/
+
+# Session store
+sessions/
+
+# Email templates compiled
+templates/compiled/
+
+# API documentation
+docs/api/
+docs/generated/
+
+# Sequelize specific
+config/config.json
+models/index.js
+
+# Prisma (if switching back)
+prisma/migrations/
+prisma/dev.db
+
+# OpenAI API keys and responses cache
+openai_cache/
+ai_responses/
