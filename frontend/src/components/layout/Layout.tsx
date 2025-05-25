@@ -1,8 +1,9 @@
+'use client';
+
 import React, { ReactNode } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import Navbar from './Navbar';
-// import Sidebar from './Sidebar';
-// import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,14 +25,15 @@ const Layout: React.FC<LayoutProps> = ({
       <Navbar />
       
       <div className="flex">
-        {/* Sidebar - only show for authenticated users */}
+        {/* Sidebar placeholder - implement later when needed */}
         {/* {isAuthenticated && showSidebar && <Sidebar />} */}
         
         {/* Main content */}
         <main 
           className={cn(
             'flex-1 transition-all duration-200',
-            isAuthenticated && showSidebar ? 'ml-64' : '',
+            // Remove sidebar margin for now since no sidebar exists
+            // isAuthenticated && showSidebar ? 'ml-64' : '',
             'pt-16', // Account for fixed navbar height
             className
           )}

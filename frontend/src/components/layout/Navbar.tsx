@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import { 
   User, 
   Bell, 
   Search, 
-  Menu, 
   LogOut, 
   Settings, 
   ChevronDown,
@@ -16,24 +16,55 @@ import {
 import { getInitials } from '@/lib/utils';
 
 const Navbar: React.FC = () => {
+  const [mounted, setMounted] = useState(false);
   const { user, logout } = useAuth();
-  const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isAuthenticated = !!user;
 
   const handleLogout = () => {
     logout();
-    router.push('/auth/login');
+    // Use window.location instead of router to avoid SSR issues
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/traits?search=${encodeURIComponent(searchQuery.trim())}`);
+    if (searchQuery.trim() && typeof window !== 'undefined') {
+      window.location.href = `/traits?search=${encodeURIComponent(searchQuery.trim())}`;
     }
   };
+
+  // Don't render navbar until component is mounted on client
+  if (!mounted) {
+    return (
+      <nav className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center">
+                <div className="flex items-center space-x-2">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-xl font-bold text-gray-900">PersonaTrade</span>
+                </div>
+              </Link>
+            </div>
+            <div className="animate-pulse flex space-x-4">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-8 w-20 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">

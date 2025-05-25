@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, AuthContextType, LoginCredentials, RegisterData } from '@/lib/types';
 import { api } from '@/lib/api/client';
