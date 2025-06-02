@@ -1,36 +1,68 @@
-import mysql from 'mysql2/promise';
+import sql from 'mssql';
 import { Sequelize } from 'sequelize';
 
-// Database connection configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'personatrade',
+// SQL Server connection configuration for Windows Authentication
+const dbConfigWindows: sql.config = {
+  server: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '1433'),
+  database: process.env.DB_NAME || 'PersonaTrade',
+  options: {
+    encrypt: false,
+    trustServerCertificate: true,
+    enableArithAbort: true,
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
 };
 
-// Raw MySQL connection for direct queries
+// SQL Server connection configuration for SQL Authentication
+const dbConfigSQL: sql.config = {
+  server: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '1433'),
+  database: process.env.DB_NAME || 'PersonaTrade',
+  user: process.env.DB_USER || '',
+  password: process.env.DB_PASSWORD || '',
+  options: {
+    encrypt: false,
+    trustServerCertificate: true,
+    enableArithAbort: true,
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
+};
+
+// Raw SQL Server connection
 export const createConnection = async () => {
   try {
-    const connection = await mysql.createConnection(dbConfig);
-    console.log('✅ Database connected successfully');
-    return connection;
+    const useWindowsAuth = process.env.DB_USE_WINDOWS_AUTH === 'true';
+    const config = useWindowsAuth ? dbConfigWindows : dbConfigSQL;
+    
+    console.log(`🔌 Connecting to SQL Server with ${useWindowsAuth ? 'Windows' : 'SQL'} Authentication...`);
+    
+    const pool = await sql.connect(config);
+    console.log('✅ SQL Server connected successfully');
+    return pool;
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error('❌ SQL Server connection failed:', error);
     throw error;
   }
 };
 
-// Sequelize ORM instance
+// Sequelize ORM instance for SQL Server
 export const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.user,
-  dbConfig.password,
+  process.env.DB_NAME || 'PersonaTrade',
+  process.env.DB_USER || '',
+  process.env.DB_PASSWORD || '',
   {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: 'mysql',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '1433'),
+    dialect: 'mssql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
       max: 10,
@@ -38,7 +70,13 @@ export const sequelize = new Sequelize(
       acquire: 30000,
       idle: 10000,
     },
-    timezone: '+00:00',
+    dialectOptions: {
+      options: {
+        encrypt: false,
+        trustServerCertificate: true,
+        enableArithAbort: true,
+      }
+    },
   }
 );
 
@@ -46,9 +84,9 @@ export const sequelize = new Sequelize(
 export const testConnection = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Sequelize connection established successfully');
+    console.log('✅ Sequelize SQL Server connection established successfully');
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
+    console.error('❌ Unable to connect to SQL Server:', error);
     throw error;
   }
 };
@@ -59,7 +97,8 @@ export const initializeDatabase = async () => {
     await testConnection();
     
     // Sync models (create tables if they don't exist)
-    await sequelize.sync({ force: false });
+    // Set to false since we already created tables manually
+    await sequelize.sync({ force: false, alter: false });
     console.log('✅ Database synchronized successfully');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
