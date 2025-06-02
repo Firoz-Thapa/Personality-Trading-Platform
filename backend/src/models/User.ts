@@ -1,4 +1,3 @@
-// backend/src/models/User.ts
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
 
@@ -34,7 +33,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   // Method to get user without password
   public toJSON() {
     const values = { ...this.get() };
-    delete values.password;
+    // Make password optional for deletion
+    delete (values as any).password;
     return values;
   }
 }
@@ -91,6 +91,16 @@ User.init(
     verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

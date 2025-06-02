@@ -1,30 +1,13 @@
 import sql from 'mssql';
 import { Sequelize } from 'sequelize';
 
-// SQL Server connection configuration for Windows Authentication
-const dbConfigWindows: sql.config = {
-  server: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '1433'),
-  database: process.env.DB_NAME || 'PersonaTrade',
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-    enableArithAbort: true,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
-
-// SQL Server connection configuration for SQL Authentication
-const dbConfigSQL: sql.config = {
-  server: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '1433'),
-  database: process.env.DB_NAME || 'PersonaTrade',
-  user: process.env.DB_USER || '',
-  password: process.env.DB_PASSWORD || '',
+// Force SQL Server Authentication
+const dbConfig: sql.config = {
+  server: 'localhost',
+  port: 1433,
+  database: 'PersonaTrade',
+  user: 'personatrade_user',
+  password: 'PersonaTrade123!',
   options: {
     encrypt: false,
     trustServerCertificate: true,
@@ -40,12 +23,12 @@ const dbConfigSQL: sql.config = {
 // Raw SQL Server connection
 export const createConnection = async () => {
   try {
-    const useWindowsAuth = process.env.DB_USE_WINDOWS_AUTH === 'true';
-    const config = useWindowsAuth ? dbConfigWindows : dbConfigSQL;
+    console.log('🔌 Connecting to SQL Server with SQL Authentication...');
+    console.log(`📍 Server: ${dbConfig.server}:${dbConfig.port}`);
+    console.log(`🗄️ Database: ${dbConfig.database}`);
+    console.log(`👤 Username: ${dbConfig.user}`);
     
-    console.log(`🔌 Connecting to SQL Server with ${useWindowsAuth ? 'Windows' : 'SQL'} Authentication...`);
-    
-    const pool = await sql.connect(config);
+    const pool = await sql.connect(dbConfig);
     console.log('✅ SQL Server connected successfully');
     return pool;
   } catch (error) {
@@ -54,22 +37,16 @@ export const createConnection = async () => {
   }
 };
 
-// Sequelize ORM instance for SQL Server
+// Sequelize with forced SQL Server Authentication
 export const sequelize = new Sequelize(
-  process.env.DB_NAME || 'PersonaTrade',
-  process.env.DB_USER || '',
-  process.env.DB_PASSWORD || '',
+  'PersonaTrade',
+  'personatrade_user',
+  'PersonaTrade123!',
   {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '1433'),
+    host: 'localhost',
+    port: 1433,
     dialect: 'mssql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
     dialectOptions: {
       options: {
         encrypt: false,
@@ -95,9 +72,6 @@ export const testConnection = async () => {
 export const initializeDatabase = async () => {
   try {
     await testConnection();
-    
-    // Sync models (create tables if they don't exist)
-    // Set to false since we already created tables manually
     await sequelize.sync({ force: false, alter: false });
     console.log('✅ Database synchronized successfully');
   } catch (error) {

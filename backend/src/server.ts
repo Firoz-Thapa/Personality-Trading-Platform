@@ -31,6 +31,7 @@ app.use(cors({
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
 
@@ -68,8 +69,8 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
-// Error handling
-app.use((err: any, req: any, res: any, next: any) => {
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('❌ Server Error:', err.stack);
   res.status(500).json({ 
     success: false,
@@ -82,7 +83,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 app.use('*', (req, res) => {
   res.status(404).json({ 
     success: false,
-    message: 'Route not found' 
+    message: `Route ${req.originalUrl} not found` 
   });
 });
 
