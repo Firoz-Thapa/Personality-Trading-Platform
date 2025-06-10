@@ -9,18 +9,33 @@ const createApiClient = (): AxiosInstance => {
     headers: {
       'Content-Type': 'application/json',
     },
+    // Add credentials for CORS
+    withCredentials: false,
   });
 
   // Request interceptor to add auth token
   client.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        if (token) {
+          // Remove quotes if token is stored as JSON string
+          let cleanToken = token;
+          
+          // If token starts and ends with quotes, remove them
+          if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
+            cleanToken = cleanToken.slice(1, -1);
+          }
+          
+          config.headers.Authorization = `Bearer ${cleanToken}`;
+          console.log('🔑 Adding token to request:', cleanToken.substring(0, 20) + '...');
+        }
       }
       return config;
     },
     (error) => {
+      console.error('❌ Request interceptor error:', error);
       return Promise.reject(error);
     }
   );
@@ -28,24 +43,37 @@ const createApiClient = (): AxiosInstance => {
   // Response interceptor for error handling
   client.interceptors.response.use(
     (response: AxiosResponse) => {
+      console.log('✅ API Response:', {
+        status: response.status,
+        url: response.config.url,
+        success: response.data?.success
+      });
       return response;
     },
     (error) => {
+      console.error('❌ API Error:', {
+        status: error.response?.status,
+        url: error.config?.url,
+        message: error.response?.data?.message || error.message,
+        data: error.response?.data
+      });
+
       // Handle common errors
       if (error.response?.status === 401) {
+        console.log('🔓 Unauthorized - clearing token');
         // Unauthorized - remove token and redirect to login
-        localStorage.removeItem('token');
-        window.location.href = '/auth/login';
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          window.location.href = '/auth/login';
+        }
       }
       
       if (error.response?.status === 403) {
-        // Forbidden
-        console.error('Access forbidden');
+        console.log('🚫 Forbidden access');
       }
       
       if (error.response?.status >= 500) {
-        // Server error
-        console.error('Server error:', error.response.data);
+        console.error('🔥 Server error:', error.response.data);
       }
       
       return Promise.reject(error);
@@ -69,6 +97,7 @@ class ApiService {
   // GET request
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
+      console.log('📤 GET Request:', url);
       const response = await this.client.get<ApiResponse<T>>(url, config);
       return response.data;
     } catch (error: any) {
@@ -79,6 +108,7 @@ class ApiService {
   // POST request
   async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
+      console.log('📤 POST Request:', url, { data: data ? 'Present' : 'None' });
       const response = await this.client.post<ApiResponse<T>>(url, data, config);
       return response.data;
     } catch (error: any) {
@@ -161,7 +191,9 @@ class ApiService {
   private handleError(error: any): Error {
     if (error.response) {
       // Server responded with error status
-      const message = error.response.data?.message || error.response.data?.error || 'An error occurred';
+      const message = error.response.data?.message || 
+                     error.response.data?.error || 
+                     'An error occurred';
       return new Error(message);
     } else if (error.request) {
       // Request was made but no response received
@@ -178,14 +210,24 @@ export const api = new ApiService(apiClient);
 
 // Utility functions for common patterns
 export const withAuth = (config: AxiosRequestConfig = {}): AxiosRequestConfig => {
-  const token = localStorage.getItem('token');
-  return {
-    ...config,
-    headers: {
-      ...config.headers,
-      Authorization: token ? `Bearer ${token}` : '',
-    },
-  };
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    let cleanToken = token;
+    
+    // Remove quotes if present
+    if (cleanToken && cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
+      cleanToken = cleanToken.slice(1, -1);
+    }
+    
+    return {
+      ...config,
+      headers: {
+        ...config.headers,
+        Authorization: cleanToken ? `Bearer ${cleanToken}` : '',
+      },
+    };
+  }
+  return config;
 };
 
 export const buildQueryString = (params: Record<string, any>): string => {
@@ -207,7 +249,8 @@ if (process.env.NODE_ENV === 'development') {
     console.log('🚀 API Request:', {
       method: request.method?.toUpperCase(),
       url: request.url,
-      data: request.data,
+      hasToken: !!request.headers.Authorization,
+      data: request.data ? 'Present' : 'None',
     });
     return request;
   });
@@ -217,7 +260,7 @@ if (process.env.NODE_ENV === 'development') {
       console.log('✅ API Response:', {
         status: response.status,
         url: response.config.url,
-        data: response.data,
+        success: response.data?.success,
       });
       return response;
     },

@@ -18,48 +18,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Check for existing token on mount
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('🔄 Initializing auth...');
       const token = storage.get('token');
       
       if (token) {
+        console.log('🔑 Found token, verifying...');
         try {
           // Verify token and get user data
           const response = await api.get<User>('/auth/me');
+          console.log('✅ Token verification response:', response);
+          
           if (response.success && response.data) {
+            console.log('✅ User authenticated:', response.data.email);
             setUser(response.data);
           } else {
-            // Invalid token, remove it
+            console.log('❌ Invalid token response, removing token');
             storage.remove('token');
           }
-        } catch (error) {
-          console.error('Token verification failed:', error);
+        } catch (error: any) {
+          console.error('❌ Token verification failed:', error.message);
           storage.remove('token');
         }
+      } else {
+        console.log('ℹ️ No token found');
       }
       
       setLoading(false);
     };
 
-    initializeAuth();
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      initializeAuth();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   // Login function
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {
       setLoading(true);
+      console.log('🔐 Attempting login for:', credentials.email);
+      
       const response = await api.post<{ user: User; token: string }>('/auth/login', credentials);
+      console.log('📥 Login response:', { 
+        success: response.success, 
+        hasData: !!response.data,
+        hasToken: !!response.data?.token,
+        hasUser: !!response.data?.user
+      });
       
       if (response.success && response.data) {
         const { user, token } = response.data;
         
+        console.log('💾 Storing token and user data...');
         // Store token
         storage.set('token', token);
         
         // Set user
         setUser(user);
+        console.log('✅ Login successful for:', user.email);
       } else {
-        throw new Error(response.message || 'Login failed');
+        throw new Error(response.message || 'Login failed - no data received');
       }
     } catch (error: any) {
+      console.error('❌ Login error:', error);
       throw new Error(error.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -70,20 +93,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (data: RegisterData): Promise<void> => {
     try {
       setLoading(true);
+      console.log('📝 Attempting registration for:', data.email);
+      
       const response = await api.post<{ user: User; token: string }>('/auth/register', data);
+      console.log('📥 Registration response:', { 
+        success: response.success, 
+        hasData: !!response.data,
+        hasToken: !!response.data?.token,
+        hasUser: !!response.data?.user
+      });
       
       if (response.success && response.data) {
         const { user, token } = response.data;
         
+        console.log('💾 Storing token and user data...');
         // Store token
         storage.set('token', token);
         
         // Set user
         setUser(user);
+        console.log('✅ Registration successful for:', user.email);
       } else {
-        throw new Error(response.message || 'Registration failed');
+        throw new Error(response.message || 'Registration failed - no data received');
       }
     } catch (error: any) {
+      console.error('❌ Registration error:', error);
       throw new Error(error.message || 'Registration failed');
     } finally {
       setLoading(false);
@@ -93,6 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = (): void => {
     try {
+      console.log('👋 Logging out user...');
       // Call logout endpoint (optional, for server-side cleanup)
       api.post('/auth/logout').catch(console.error);
     } catch (error) {
@@ -101,12 +136,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clean up local state regardless of API call result
       storage.remove('token');
       setUser(null);
+      console.log('✅ Logout complete');
     }
   };
 
   // Update user function
   const updateUser = (userData: Partial<User>): void => {
     if (user) {
+      console.log('🔄 Updating user data...');
       setUser({ ...user, ...userData });
     }
   };
@@ -157,6 +194,7 @@ export const withAuth = <P extends object>(
     // Redirect to login if not authenticated
     if (!user) {
       if (typeof window !== 'undefined') {
+        console.log('🔒 User not authenticated, redirecting to login...');
         window.location.href = '/auth/login';
       }
       return null;
