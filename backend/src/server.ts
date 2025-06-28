@@ -27,11 +27,11 @@ const corsOptions = {
       process.env.CORS_ORIGIN
     ].filter(Boolean);
 
-    console.log('🌐 CORS Check - Origin:', origin);
-    console.log('🌐 CORS Check - Allowed:', allowedOrigins);
+    console.log('CORS Check - Origin:', origin);
+    console.log('CORS Check - Allowed:', allowedOrigins);
 
     if (allowedOrigins.includes(origin)) {
-      console.log('✅ CORS: Origin allowed');
+      console.log('CORS: Origin allowed');
       callback(null, true);
     } else {
       console.log('❌ CORS: Origin blocked');
@@ -89,14 +89,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`\n📥 ${req.method} ${req.originalUrl}`);
-  console.log('📥 Headers:', {
+  console.log(`\n ${req.method} ${req.originalUrl}`);
+  console.log(' Headers:', {
     'content-type': req.headers['content-type'],
     'authorization': req.headers['authorization'] ? `Bearer ${req.headers['authorization'].split(' ')[1]?.substring(0, 20)}...` : 'None',
     'origin': req.headers['origin']
   });
   if (req.body && Object.keys(req.body).length > 0) {
-    console.log('📥 Body keys:', Object.keys(req.body));
+    console.log(' Body keys:', Object.keys(req.body));
   }
   next();
 });
@@ -135,7 +135,7 @@ app.get('/api/v1', (req, res) => {
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('❌ Server Error:', err.stack);
+  console.error('Server Error:', err.stack);
   
   // CORS error
   if (err.message === 'Not allowed by CORS') {
@@ -156,7 +156,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // 404 handler
 app.use('*', (req, res) => {
-  console.log('❌ 404 - Route not found:', req.originalUrl);
+  console.log('404 - Route not found:', req.originalUrl);
   res.status(404).json({ 
     success: false,
     message: `Route ${req.originalUrl} not found` 
@@ -166,22 +166,22 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 const startServer = async () => {
   try {
-    console.log('🚀 Starting PersonaTrade API Server...');
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Database: ${process.env.DB_NAME || 'PersonaTrade'} on ${process.env.DB_HOST || 'localhost'}`);
-    console.log(`🌐 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
-    console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Configured' : 'MISSING!'}`);
+    console.log('Starting PersonaTrade API Server...');
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Database: ${process.env.DB_NAME || 'PersonaTrade'} on ${process.env.DB_HOST || 'localhost'}`);
+    console.log(`CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+    console.log(`JWT Secret: ${process.env.JWT_SECRET ? 'Configured' : 'MISSING!'}`);
     
     await initializeDatabase();
     
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔗 API info: http://localhost:${PORT}/api/v1`);
-      console.log('✅ PersonaTrade API is ready!');
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`API info: http://localhost:${PORT}/api/v1`);
+      console.log('PersonaTrade API is ready!');
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 };
