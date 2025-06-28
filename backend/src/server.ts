@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
 import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
 
 // Load environment variables
 dotenv.config();
@@ -34,7 +35,7 @@ const corsOptions = {
       console.log('CORS: Origin allowed');
       callback(null, true);
     } else {
-      console.log('❌ CORS: Origin blocked');
+      console.log('CORS: Origin blocked');
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -89,14 +90,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`\n ${req.method} ${req.originalUrl}`);
-  console.log(' Headers:', {
+  console.log(`\n${req.method} ${req.originalUrl}`);
+  console.log('Headers:', {
     'content-type': req.headers['content-type'],
     'authorization': req.headers['authorization'] ? `Bearer ${req.headers['authorization'].split(' ')[1]?.substring(0, 20)}...` : 'None',
     'origin': req.headers['origin']
   });
   if (req.body && Object.keys(req.body).length > 0) {
-    console.log(' Body keys:', Object.keys(req.body));
+    console.log('Body keys:', Object.keys(req.body));
   }
   next();
 });
@@ -114,6 +115,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
 
 // Basic API info
 app.get('/api/v1', (req, res) => {
@@ -125,10 +127,15 @@ app.get('/api/v1', (req, res) => {
     endpoints: [
       'GET /health',
       'GET /api/v1',
+      // Auth endpoints
       'POST /api/v1/auth/register',
       'POST /api/v1/auth/login',
       'GET /api/v1/auth/me',
-      'POST /api/v1/auth/logout'
+      'POST /api/v1/auth/logout',
+      // User endpoints
+      'GET /api/v1/users/:id',
+      'PATCH /api/v1/users/:id',
+      'DELETE /api/v1/users/:id'
     ]
   });
 });
