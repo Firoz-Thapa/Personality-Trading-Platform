@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
-
+import traitRoutes from './routes/traits';
 // Load environment variables
 dotenv.config();
 
@@ -116,6 +116,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/traits', traitRoutes);
 
 // Basic API info
 app.get('/api/v1', (req, res) => {
