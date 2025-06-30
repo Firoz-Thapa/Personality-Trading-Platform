@@ -44,8 +44,8 @@ router.get('/', [
     const sortBy = req.query.sortBy as string || 'newest';
     const sortOrder = req.query.sortOrder as string || 'desc';
 
-    // Build where conditions
-    const whereConditions: WhereOptions = {};
+    // Build where conditions with proper typing
+    const whereConditions: WhereOptions<any> = {};
 
     if (available !== undefined) {
       whereConditions.available = available;
@@ -68,7 +68,8 @@ router.get('/', [
     }
 
     if (search) {
-      whereConditions[Op.or] = [
+      // Use proper typing for Op.or
+      whereConditions[Op.or as any] = [
         { name: { [Op.iLike]: `%${search}%` } },
         { description: { [Op.iLike]: `%${search}%` } }
       ];

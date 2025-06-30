@@ -171,6 +171,15 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  filters?: any;
 }
 
 export interface PaginatedResponse<T> {
@@ -181,6 +190,8 @@ export interface PaginatedResponse<T> {
     limit: number;
     total: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
   };
 }
 
@@ -262,10 +273,12 @@ export interface ProfileFormData {
 export interface TraitFilters {
   category?: TraitCategory;
   minRating?: number;
-  maxHourlyRate?: number;
+  maxPrice?: number;
   verified?: boolean;
   available?: boolean;
   search?: string;
+  sortBy?: 'newest' | 'rating' | 'price' | 'popularity';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface SortOption {

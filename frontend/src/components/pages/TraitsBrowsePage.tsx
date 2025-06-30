@@ -16,9 +16,37 @@ import {
   Grid,
   List
 } from 'lucide-react';
-import { PersonalityTrait, TraitCategory, TraitFilters } from '@/lib/types';
+import { PersonalityTrait, TraitCategory } from '@/lib/types';
 import { api } from '@/lib/api/client';
 import { formatCurrency, cn } from '@/lib/utils';
+
+// Define proper interfaces for filters and API responses
+interface TraitFilters {
+  search?: string;
+  category?: TraitCategory;
+  minRating?: number;
+  maxPrice?: number;
+  verified?: boolean;
+  available?: boolean;
+  sortBy?: 'newest' | 'rating' | 'price' | 'popularity';
+  sortOrder?: 'asc' | 'desc';
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  filters?: TraitFilters;
+}
 
 const TraitsBrowsePage: React.FC = () => {
   const [traits, setTraits] = useState<PersonalityTrait[]>([]);
@@ -82,7 +110,7 @@ const TraitsBrowsePage: React.FC = () => {
         }
       });
 
-      const response = await api.get(`/traits?${queryParams.toString()}`);
+      const response = await api.get<PersonalityTrait[]>(`/traits?${queryParams.toString()}`);
       
       if (response.success) {
         setTraits(response.data || []);
@@ -292,6 +320,7 @@ const TraitsBrowsePage: React.FC = () => {
                     value={filters.category || ''}
                     onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Select a category"
                   >
                     <option value="">All Categories</option>
                     {categories.map((cat) => (
@@ -321,6 +350,7 @@ const TraitsBrowsePage: React.FC = () => {
                     value={filters.minRating || ''}
                     onChange={(e) => handleFilterChange('minRating', e.target.value ? parseFloat(e.target.value) : undefined)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Select minimum rating"
                   >
                     <option value="">Any Rating</option>
                     <option value="4">4+ Stars</option>
@@ -335,11 +365,15 @@ const TraitsBrowsePage: React.FC = () => {
                   <select
                     value={`${filters.sortBy}-${filters.sortOrder}`}
                     onChange={(e) => {
-                      const [sortBy, sortOrder] = e.target.value.split('-');
+                      const [sortBy, sortOrder] = e.target.value.split('-') as [
+                        'newest' | 'rating' | 'price' | 'popularity',
+                        'asc' | 'desc'
+                      ];
                       handleFilterChange('sortBy', sortBy);
                       handleFilterChange('sortOrder', sortOrder);
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    title="Select sort option"
                   >
                     <option value="newest-desc">Newest First</option>
                     <option value="rating-desc">Highest Rated</option>
