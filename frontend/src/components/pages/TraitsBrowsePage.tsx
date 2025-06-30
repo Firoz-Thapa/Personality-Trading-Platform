@@ -80,7 +80,7 @@ const TraitsBrowsePage: React.FC = () => {
       try {
         const response = await api.get('/traits/meta/categories');
         if (response.success) {
-          setCategories(response.data || []);
+          setCategories((response.data as any[]) || []);
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error);
@@ -91,40 +91,40 @@ const TraitsBrowsePage: React.FC = () => {
 
   // Fetch traits when filters or page changes
   useEffect(() => {
+    const fetchTraits = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const queryParams = new URLSearchParams();
+        queryParams.append('page', currentPage.toString());
+        queryParams.append('limit', '12');
+        
+        // Add filters to query
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== '' && value !== null) {
+            queryParams.append(key, value.toString());
+          }
+        });
+
+        const response = await api.get<PersonalityTrait[]>(`/traits?${queryParams.toString()}`);
+        
+        if (response.success) {
+          setTraits(response.data || []);
+          setTotalPages(response.pagination?.totalPages || 1);
+          setTotal(response.pagination?.total || 0);
+        } else {
+          setError(response.message || 'Failed to fetch traits');
+        }
+      } catch (error: any) {
+        setError(error.message || 'Failed to fetch traits');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchTraits();
   }, [filters, currentPage]);
-
-  const fetchTraits = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', currentPage.toString());
-      queryParams.append('limit', '12');
-      
-      // Add filters to query
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          queryParams.append(key, value.toString());
-        }
-      });
-
-      const response = await api.get<PersonalityTrait[]>(`/traits?${queryParams.toString()}`);
-      
-      if (response.success) {
-        setTraits(response.data || []);
-        setTotalPages(response.pagination?.totalPages || 1);
-        setTotal(response.pagination?.total || 0);
-      } else {
-        setError(response.message || 'Failed to fetch traits');
-      }
-    } catch (error: any) {
-      setError(error.message || 'Failed to fetch traits');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFilterChange = (key: keyof TraitFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));

@@ -29,29 +29,29 @@ const TraitDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchTrait = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await api.get<PersonalityTrait>(`/traits/${traitId}`);
+        
+        if (response.success && response.data) {
+          setTrait(response.data);
+        } else {
+          setError('Trait not found');
+        }
+      } catch (error: any) {
+        setError(error.message || 'Failed to load trait');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (traitId) {
       fetchTrait();
     }
   }, [traitId]);
-
-  const fetchTrait = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await api.get<PersonalityTrait>(`/traits/${traitId}`);
-      
-      if (response.success && response.data) {
-        setTrait(response.data);
-      } else {
-        setError('Trait not found');
-      }
-    } catch (error: any) {
-      setError(error.message || 'Failed to load trait');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (

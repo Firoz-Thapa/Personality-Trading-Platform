@@ -241,6 +241,9 @@ export interface InputProps {
   disabled?: boolean;
   required?: boolean;
   className?: string;
+  step?: string;
+  min?: string;
+  max?: string;
 }
 
 export interface ModalProps {

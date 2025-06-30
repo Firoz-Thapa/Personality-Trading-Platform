@@ -13,13 +13,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   disabled = false,
   required = false,
   className,
+  step,
+  min,
+  max,
   ...props
 }, ref) => {
   const inputClasses = cn(
     `
       w-full px-3 py-2 
       border rounded-lg
-      text-sm
+      text-sm text-gray-900
+      bg-white
       transition-colors duration-200
       focus:outline-none focus:ring-2 focus:ring-offset-1
       disabled:opacity-50 disabled:cursor-not-allowed
@@ -55,6 +59,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
+          step={step}
+          min={min}
+          max={max}
           className={inputClasses}
           {...props}
         />

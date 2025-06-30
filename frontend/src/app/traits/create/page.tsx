@@ -123,7 +123,7 @@ const CreateTraitPage: React.FC = () => {
         
         // Redirect to trait detail page after a short delay
         setTimeout(() => {
-          router.push(`/traits/${response.data.id}`);
+          router.push(`/traits/${(response.data as any).id}`);
         }, 1500);
       } else {
         setMessage({ type: 'error', text: response.message || 'Failed to create trait' });
@@ -230,6 +230,7 @@ const CreateTraitPage: React.FC = () => {
                     onChange={(e) => handleInputChange('category')(e.target.value)}
                     className={`
                       w-full px-3 py-2 border rounded-lg
+                      text-gray-900 bg-white
                       transition-colors duration-200
                       focus:outline-none focus:ring-2 focus:ring-offset-1
                       ${errors.category 
@@ -237,6 +238,7 @@ const CreateTraitPage: React.FC = () => {
                         : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
                       }
                     `}
+                    title="Select a category for your trait"
                     required
                   >
                     <option value="">Select a category</option>
