@@ -21,9 +21,15 @@ router.get('/', [
   query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
 ], async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    console.log('\n🔍 =================================');
+    console.log('🔍 GET /traits REQUEST DEBUG');
+    console.log('🔍 =================================');
+    console.log('📍 Query params:', req.query);
+
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -32,48 +38,73 @@ router.get('/', [
       return;
     }
 
-    // Extract query parameters
+    // Test database connection first
+    try {
+      await PersonalityTrait.findOne({ limit: 1 });
+      console.log('✅ Database connection test passed');
+    } catch (dbError: any) {
+      console.error('❌ Database connection failed:', dbError);
+      res.status(500).json({
+        success: false,
+        message: 'Database connection failed',
+        error: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error'
+      });
+      return;
+    }
+
+    // Extract query parameters with better null handling
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const search = req.query.search as string;
     const category = req.query.category as TraitCategory;
-    const minRating = parseFloat(req.query.minRating as string);
-    const maxPrice = parseInt(req.query.maxPrice as string);
-    const verified = req.query.verified === 'true';
-    const available = req.query.available !== 'false'; // Default to true
+    const minRatingStr = req.query.minRating as string;
+    const maxPriceStr = req.query.maxPrice as string;
+    const verifiedStr = req.query.verified as string;
+    const availableStr = req.query.available as string;
     const sortBy = req.query.sortBy as string || 'newest';
     const sortOrder = req.query.sortOrder as string || 'desc';
 
-    // Build where conditions with proper typing
+    // Parse numeric values safely
+    const minRating = minRatingStr && !isNaN(parseFloat(minRatingStr)) ? parseFloat(minRatingStr) : null;
+    const maxPrice = maxPriceStr && !isNaN(parseInt(maxPriceStr)) ? parseInt(maxPriceStr) : null;
+    const verified = verifiedStr === 'true' ? true : verifiedStr === 'false' ? false : null;
+    const available = availableStr === 'false' ? false : true; // Default to true
+
+    console.log('📊 Parsed parameters:', {
+      page, limit, search, category, minRating, maxPrice, verified, available, sortBy, sortOrder
+    });
+
+    // Build where conditions with proper typing and null checks
     const whereConditions: WhereOptions<any> = {};
 
-    if (available !== undefined) {
-      whereConditions.available = available;
-    }
+    // Always filter by available unless explicitly set to false
+    whereConditions.available = available;
 
-    if (category) {
+    if (category && Object.values(TraitCategory).includes(category)) {
       whereConditions.category = category;
     }
 
-    if (minRating) {
+    if (minRating !== null && minRating >= 0 && minRating <= 5) {
       whereConditions.averageRating = { [Op.gte]: minRating };
     }
 
-    if (maxPrice) {
+    if (maxPrice !== null && maxPrice > 0) {
       whereConditions.hourlyRate = { [Op.lte]: maxPrice };
     }
 
-    if (verified !== undefined) {
+    if (verified !== null) {
       whereConditions.verified = verified;
     }
 
-    if (search) {
-      // Use proper typing for Op.or
+    if (search && search.trim().length > 0) {
+      const searchTerm = search.trim();
       whereConditions[Op.or as any] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } }
+        { name: { [Op.iLike]: `%${searchTerm}%` } },
+        { description: { [Op.iLike]: `%${searchTerm}%` } }
       ];
     }
+
+    console.log('🔧 Where conditions:', JSON.stringify(whereConditions, null, 2));
 
     // Build order conditions
     let orderConditions: any[] = [];
@@ -93,36 +124,35 @@ router.get('/', [
         break;
     }
 
+    console.log('📈 Order conditions:', orderConditions);
+
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    console.log('🔍 Searching traits with conditions:', {
-      whereConditions,
-      orderConditions,
-      page,
-      limit,
-      offset
-    });
-
-    // Fetch traits with pagination
+    // Fetch traits with pagination and better error handling
+    console.log('🔍 Executing database query...');
     const { rows: traits, count: total } = await PersonalityTrait.findAndCountAll({
       where: whereConditions,
       include: [
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'verified']
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'verified'],
+          required: false // Use LEFT JOIN to avoid issues with missing owners
         }
       ],
       order: orderConditions,
-      limit,
+      limit: Math.min(limit, 50), // Cap limit to prevent large queries
       offset,
       distinct: true,
+      subQuery: false // This can help with complex queries
     });
+
+    console.log(`✅ Query successful: Found ${total} total traits, returning ${traits.length} for page ${page}`);
 
     const totalPages = Math.ceil(total / limit);
 
-    res.json({
+    const response = {
       success: true,
       data: traits,
       pagination: {
@@ -134,8 +164,8 @@ router.get('/', [
         hasPrevPage: page > 1,
       },
       filters: {
-        search,
-        category,
+        search: search || null,
+        category: category || null,
         minRating,
         maxPrice,
         verified,
@@ -143,14 +173,44 @@ router.get('/', [
         sortBy,
         sortOrder,
       }
-    });
+    };
+
+    res.json(response);
+    console.log('🔍 =================================\n');
 
   } catch (error: any) {
-    console.error('❌ Get traits error:', error);
-    res.status(500).json({
+    console.error('❌ Get traits error details:');
+    console.error('❌ Error name:', error.name);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error stack:', error.stack);
+    
+    // Specific error handling for common database issues
+    let errorMessage = 'Failed to fetch traits';
+    let statusCode = 500;
+
+    if (error.name === 'SequelizeConnectionError') {
+      errorMessage = 'Database connection error';
+      statusCode = 503;
+    } else if (error.name === 'SequelizeDatabaseError') {
+      errorMessage = 'Database query error';
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        errorMessage = 'Database tables not initialized';
+      }
+    } else if (error.name === 'SequelizeValidationError') {
+      errorMessage = 'Invalid query parameters';
+      statusCode = 400;
+    }
+
+    console.log('🔍 =================================\n');
+    
+    res.status(statusCode).json({
       success: false,
-      message: 'Failed to fetch traits',
-      error: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? {
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n') // Truncate stack trace
+      } : undefined
     });
   }
 });
@@ -162,12 +222,22 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 
     console.log('🔍 Getting trait:', id);
 
+    // Validate UUID format
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid trait ID format'
+      });
+      return;
+    }
+
     const trait = await PersonalityTrait.findByPk(id, {
       include: [
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'bio', 'verified', 'createdAt']
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'bio', 'verified', 'createdAt'],
+          required: false
         }
       ]
     });
@@ -193,7 +263,7 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
     res.status(500).json({
       success: false,
       message: 'Failed to get trait',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
@@ -261,7 +331,7 @@ router.post('/', [
     res.status(500).json({
       success: false,
       message: 'Failed to create trait',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
@@ -344,7 +414,7 @@ router.put('/:id', [
     res.status(500).json({
       success: false,
       message: 'Failed to update trait',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
@@ -393,7 +463,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
     res.status(500).json({
       success: false,
       message: 'Failed to delete trait',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
@@ -414,7 +484,8 @@ router.get('/user/:userId', async (req: AuthRequest, res: Response): Promise<voi
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'verified']
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'verified'],
+          required: false
         }
       ],
       order: [['createdAt', 'desc']],
@@ -442,7 +513,7 @@ router.get('/user/:userId', async (req: AuthRequest, res: Response): Promise<voi
     res.status(500).json({
       success: false,
       message: 'Failed to get user traits',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
@@ -466,7 +537,7 @@ router.get('/meta/categories', async (req: AuthRequest, res: Response): Promise<
     res.status(500).json({
       success: false,
       message: 'Failed to get categories',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });

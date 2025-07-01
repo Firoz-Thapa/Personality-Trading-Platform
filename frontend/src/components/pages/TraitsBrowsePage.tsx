@@ -74,6 +74,44 @@ const TraitsBrowsePage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
 
+  // Search suggestions
+  const searchSuggestions = [
+    'Confidence building',
+    'Public speaking',
+    'Leadership skills',
+    'Charismatic communication',
+    'Empathetic listening',
+    'Negotiation tactics',
+    'Humor in presentations',
+    'Assertive communication'
+  ];
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+
+  // Quick filters
+  const quickFilters = [
+    { label: 'Highly Rated', filter: { minRating: 4 } },
+    { label: 'Under $50/hr', filter: { maxPrice: 5000 } },
+    { label: 'Leadership', filter: { category: TraitCategory.LEADERSHIP } },
+    { label: 'Communication', filter: { category: TraitCategory.COMMUNICATION } },
+    { label: 'Confidence', filter: { category: TraitCategory.CONFIDENCE } },
+    { label: 'Verified Only', filter: { verified: true } },
+  ];
+
+  // Filter suggestions based on search
+  useEffect(() => {
+    if (filters.search && filters.search.length > 1) {
+      const filtered = searchSuggestions.filter(suggestion =>
+        suggestion.toLowerCase().includes(filters.search!.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [filters.search]);
+
   // Fetch categories on mount
   useEffect(() => {
     const fetchCategories = async () => {
@@ -171,6 +209,54 @@ const TraitsBrowsePage: React.FC = () => {
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
+
+  // Skeleton loading component
+  const SkeletonCard: React.FC = () => (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 animate-pulse">
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gray-200 rounded"></div>
+            <div className="w-20 h-4 bg-gray-200 rounded-full"></div>
+          </div>
+          <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
+        </div>
+
+        {/* Title and description */}
+        <div className="w-3/4 h-5 bg-gray-200 rounded mb-2"></div>
+        <div className="space-y-2 mb-4">
+          <div className="w-full h-3 bg-gray-200 rounded"></div>
+          <div className="w-2/3 h-3 bg-gray-200 rounded"></div>
+        </div>
+
+        {/* Provider */}
+        <div className="flex items-center space-x-2 mb-4">
+          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+          <div>
+            <div className="w-24 h-3 bg-gray-200 rounded mb-1"></div>
+            <div className="w-16 h-3 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="flex items-center space-x-4 mb-4">
+          <div className="w-12 h-3 bg-gray-200 rounded"></div>
+          <div className="w-16 h-3 bg-gray-200 rounded"></div>
+          <div className="w-14 h-3 bg-gray-200 rounded"></div>
+        </div>
+
+        {/* Price and button */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="w-20 h-5 bg-gray-200 rounded mb-1"></div>
+            <div className="w-16 h-3 bg-gray-200 rounded"></div>
+          </div>
+          <div className="w-24 h-8 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
 
   const TraitCard: React.FC<{ trait: PersonalityTrait }> = ({ trait }) => (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -296,8 +382,36 @@ const TraitsBrowsePage: React.FC = () => {
                 placeholder="Search traits, skills, or providers..."
                 value={filters.search || ''}
                 onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => {
+                  if (filteredSuggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding to allow click on suggestions
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              
+              {/* Suggestions dropdown */}
+              {showSuggestions && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  {filteredSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        handleSearch(suggestion);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm text-gray-700 flex items-center"
+                    >
+                      <Search className="h-3 w-3 mr-2 text-gray-400" />
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             <Button
@@ -307,6 +421,47 @@ const TraitsBrowsePage: React.FC = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <span className="text-sm text-gray-600 mr-2">Quick filters:</span>
+            {quickFilters.map((quickFilter) => {
+              const isActive = Object.entries(quickFilter.filter).every(([key, value]) => 
+                filters[key as keyof TraitFilters] === value
+              );
+              
+              return (
+                <button
+                  key={quickFilter.label}
+                  onClick={() => {
+                    if (isActive) {
+                      // Remove the filter
+                      const newFilters = { ...filters };
+                      Object.keys(quickFilter.filter).forEach(key => {
+                        delete newFilters[key as keyof TraitFilters];
+                      });
+                      setFilters(newFilters);
+                    } else {
+                      // Apply the filter
+                      setFilters(prev => ({ ...prev, ...quickFilter.filter }));
+                    }
+                    setCurrentPage(1);
+                  }}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                    isActive
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  )}
+                >
+                  {quickFilter.label}
+                  {isActive && (
+                    <span className="ml-1">×</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Filters Panel */}
@@ -429,8 +584,15 @@ const TraitsBrowsePage: React.FC = () => {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className={cn(
+            'grid gap-6',
+            viewMode === 'grid' 
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+              : 'grid-cols-1'
+          )}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         )}
 
