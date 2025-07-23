@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
@@ -8,509 +10,320 @@ import {
   CheckCircle,
   SlidersHorizontal,
   Grid,
-  List
+  List,
+  Heart,
+  TrendingUp,
+  Award,
+  Sparkles
 } from 'lucide-react';
+import Layout from '@/components/layout/Layout';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { PersonalityTrait, TraitCategory } from '@/lib/types';
+import { formatCurrency, formatRelativeTime, getInitials } from '@/lib/utils';
 
-// Type definitions (inline since we can't import from @/lib/types)
-enum TraitCategory {
-  CONFIDENCE = 'CONFIDENCE',
-  COMMUNICATION = 'COMMUNICATION',
-  LEADERSHIP = 'LEADERSHIP',
-  CREATIVITY = 'CREATIVITY',
-  EMPATHY = 'EMPATHY',
-  HUMOR = 'HUMOR',
-  ASSERTIVENESS = 'ASSERTIVENESS',
-  CHARISMA = 'CHARISMA',
-  PATIENCE = 'PATIENCE',
-  NEGOTIATION = 'NEGOTIATION',
-  PUBLIC_SPEAKING = 'PUBLIC_SPEAKING',
-  OTHER = 'OTHER'
-}
-
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  avatar?: string;
-  verified: boolean;
-}
-
-interface PersonalityTrait {
-  id: string;
-  ownerId: string;
-  owner?: User;
-  name: string;
-  description: string;
-  category: TraitCategory;
-  hourlyRate: number;
-  dailyRate?: number;
-  weeklyRate?: number;
-  available: boolean;
-  maxUsers: number;
-  successRate: number;
-  totalRentals: number;
-  averageRating: number;
-  verified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface TraitFilters {
-  search?: string;
-  category?: TraitCategory;
-  minRating?: number;
-  maxPrice?: number;
-  verified?: boolean;
-  available?: boolean;
-  sortBy?: 'newest' | 'rating' | 'price' | 'popularity';
-  sortOrder?: 'asc' | 'desc';
-}
-
-// Utility functions (inline since we can't import from @/lib/utils)
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount / 100);
-};
-
-const formatRelativeTime = (date: string): string => {
-  const now = new Date();
-  const past = new Date(date);
-  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  return `${Math.floor(diffInSeconds / 86400)} days ago`;
-};
-
-const getInitials = (firstName: string, lastName: string): string => {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-};
-
-// Simple API client (inline since we can't import from @/lib/api/client)
-const api = {
-  get: async (url: string, config?: any) => {
-    const baseURL = 'http://localhost:5000/api/v1';
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
-    const headers: any = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      let cleanToken = token;
-      if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
-        cleanToken = cleanToken.slice(1, -1);
-      }
-      headers.Authorization = `Bearer ${cleanToken}`;
-    }
-
-    const queryString = config?.params ? 
-      '?' + new URLSearchParams(
-        Object.entries(config.params).reduce((acc: any, [key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            acc[key] = String(value);
-          }
-          return acc;
-        }, {})
-      ).toString() : '';
-
-    const response = await fetch(`${baseURL}${url}${queryString}`, {
-      method: 'GET',
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-
-    return await response.json();
-  }
-};
-
-// Button component (inline since we can't import from @/components/ui/Button)
-interface ButtonProps {
-  children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  disabled?: boolean;
-  onClick?: () => void;
-  className?: string;
-}
-
-const Button: React.FC<ButtonProps> = ({
-  children,
-  variant = 'primary',
-  size = 'md',
-  disabled = false,
-  onClick,
-  className = ''
-}) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  
-  const variantStyles = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 shadow-sm hover:shadow-md',
-    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-900 focus:ring-gray-500',
-    outline: 'border-2 border-gray-300 hover:border-gray-400 bg-transparent hover:bg-gray-50 text-gray-700 hover:text-gray-900 focus:ring-gray-500',
-    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 hover:text-gray-900 focus:ring-gray-500'
-  };
-  
-  const sizeStyles = {
-    sm: 'px-3 py-1.5 text-sm gap-1.5',
-    md: 'px-4 py-2 text-sm gap-2',
-    lg: 'px-6 py-3 text-base gap-2.5'
-  };
-
-  return (
-    <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-};
-
-// Input component (inline since we can't import from @/components/ui/Input)
-interface InputProps {
-  type?: string;
-  placeholder?: string;
-  value?: string;
-  onChange?: (value: string) => void;
-  className?: string;
-}
-
-const Input: React.FC<InputProps> = ({
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  className = ''
-}) => {
-  return (
-    <input
-      type={type}
-      placeholder={placeholder}
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
-    />
-  );
-};
-
-// Layout component (inline since we can't import from @/components/layout/Layout)
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">🧠</span>
-              <span className="text-xl font-bold text-gray-900">PersonaTrade</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">Sign in</Button>
-              <Button variant="primary" size="sm">Get started</Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-      
-      <main className="pt-16">
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-const TraitsBrowsePage: React.FC = () => {
+// Enhanced styling with modern design patterns
+const ModernizedTraitsBrowsePage: React.FC = () => {
   const [traits, setTraits] = useState<PersonalityTrait[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-  
-  const [filters, setFilters] = useState<TraitFilters>({
-    search: '',
-    category: undefined,
-    minRating: undefined,
-    maxPrice: undefined,
-    verified: undefined,
-    available: true,
-    sortBy: 'newest',
-    sortOrder: 'desc'
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [sortBy, setSortBy] = useState('newest');
 
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 12,
-    total: 0,
-    totalPages: 0,
-    hasNextPage: false,
-    hasPrevPage: false
-  });
-
+  // Mock data for demonstration
   useEffect(() => {
-    fetchTraits();
-  }, [filters, pagination.page]);
-
-  const fetchTraits = async () => {
-    try {
-      setLoading(true);
-      const queryParams = {
-        page: pagination.page,
-        limit: pagination.limit,
-        ...filters
-      };
-
-      const response = await api.get('/traits', { params: queryParams });
-      
-      if (response.success && response.data && response.pagination) {
-        setTraits(response.data);
-        setPagination(response.pagination);
-      }
-    } catch (error) {
-      console.error('Failed to fetch traits:', error);
-      // Mock data for demo purposes
-      const mockTraits: PersonalityTrait[] = [
-        {
+    const mockTraits: PersonalityTrait[] = [
+      {
+        id: '1',
+        ownerId: '1',
+        owner: {
           id: '1',
-          ownerId: '1',
-          owner: {
-            id: '1',
-            email: 'john@example.com',
-            username: 'johnsmith',
-            firstName: 'John',
-            lastName: 'Smith',
-            verified: true
-          },
-          name: 'Confident Public Speaking',
-          description: 'Master the art of speaking in front of large audiences with confidence and charisma. Perfect for presentations, speeches, and professional meetings.',
-          category: TraitCategory.CONFIDENCE,
-          hourlyRate: 5000,
-          dailyRate: 35000,
-          available: true,
-          maxUsers: 3,
-          successRate: 92,
-          totalRentals: 47,
-          averageRating: 4.8,
+          email: 'sarah@example.com',
+          username: 'sarahwilson',
+          firstName: 'Sarah',
+          lastName: 'Wilson',
           verified: true,
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T10:30:00Z'
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z'
         },
-        {
+        name: 'Executive Presence & Leadership',
+        description: 'Develop commanding presence in boardrooms and high-stakes meetings. Learn to communicate with authority while maintaining approachability.',
+        category: TraitCategory.LEADERSHIP,
+        hourlyRate: 8500,
+        dailyRate: 60000,
+        available: true,
+        maxUsers: 2,
+        successRate: 96,
+        totalRentals: 128,
+        averageRating: 4.9,
+        verified: true,
+        createdAt: '2024-01-15T10:30:00Z',
+        updatedAt: '2024-01-15T10:30:00Z'
+      },
+      {
+        id: '2',
+        ownerId: '2',
+        owner: {
           id: '2',
-          ownerId: '2',
-          owner: {
-            id: '2',
-            email: 'sarah@example.com',
-            username: 'sarahwilson',
-            firstName: 'Sarah',
-            lastName: 'Wilson',
-            verified: true
-          },
-          name: 'Empathetic Leadership',
-          description: 'Learn to lead with empathy and understanding. Build stronger team relationships and create a positive work environment.',
-          category: TraitCategory.EMPATHY,
-          hourlyRate: 6000,
-          dailyRate: 42000,
-          available: true,
-          maxUsers: 2,
-          successRate: 95,
-          totalRentals: 23,
-          averageRating: 4.9,
+          email: 'marcus@example.com',
+          username: 'marcuschen',
+          firstName: 'Marcus',
+          lastName: 'Chen',
           verified: true,
-          createdAt: '2024-01-14T14:20:00Z',
-          updatedAt: '2024-01-14T14:20:00Z'
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z'
         },
-        {
+        name: 'Authentic Charisma',
+        description: 'Master the art of genuine charm and magnetic personality. Learn to connect deeply with others while staying true to yourself.',
+        category: TraitCategory.CHARISMA,
+        hourlyRate: 7200,
+        dailyRate: 50000,
+        available: true,
+        maxUsers: 3,
+        successRate: 94,
+        totalRentals: 89,
+        averageRating: 4.8,
+        verified: true,
+        createdAt: '2024-01-14T14:20:00Z',
+        updatedAt: '2024-01-14T14:20:00Z'
+      },
+      {
+        id: '3',
+        ownerId: '3',
+        owner: {
           id: '3',
-          ownerId: '3',
-          owner: {
-            id: '3',
-            email: 'mike@example.com',
-            username: 'mikejohnson',
-            firstName: 'Mike',
-            lastName: 'Johnson',
-            verified: false
-          },
-          name: 'Creative Problem Solving',
-          description: 'Develop innovative thinking patterns and creative approaches to challenging problems in any field.',
-          category: TraitCategory.CREATIVITY,
-          hourlyRate: 4500,
-          available: true,
-          maxUsers: 5,
-          successRate: 88,
-          totalRentals: 31,
-          averageRating: 4.6,
+          email: 'alex@example.com',
+          username: 'alexrivera',
+          firstName: 'Alex',
+          lastName: 'Rivera',
           verified: false,
-          createdAt: '2024-01-13T09:15:00Z',
-          updatedAt: '2024-01-13T09:15:00Z'
-        }
-      ];
-      
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z'
+        },
+        name: 'Confident Public Speaking',
+        description: 'Transform your public speaking anxiety into powerful, engaging presentations that captivate any audience.',
+        category: TraitCategory.CONFIDENCE,
+        hourlyRate: 6500,
+        available: true,
+        maxUsers: 5,
+        successRate: 92,
+        totalRentals: 67,
+        averageRating: 4.7,
+        verified: true,
+        createdAt: '2024-01-13T09:15:00Z',
+        updatedAt: '2024-01-13T09:15:00Z'
+      }
+    ];
+    
+    setTimeout(() => {
       setTraits(mockTraits);
-      setPagination({
-        page: 1,
-        limit: 12,
-        total: 3,
-        totalPages: 1,
-        hasNextPage: false,
-        hasPrevPage: false
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
+  }, []);
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'CONFIDENCE': 'from-blue-500 to-blue-600',
+      'COMMUNICATION': 'from-green-500 to-green-600',
+      'LEADERSHIP': 'from-purple-500 to-purple-600',
+      'CREATIVITY': 'from-yellow-500 to-orange-500',
+      'EMPATHY': 'from-pink-500 to-rose-600',
+      'HUMOR': 'from-orange-500 to-red-500',
+      'ASSERTIVENESS': 'from-red-500 to-red-600',
+      'CHARISMA': 'from-indigo-500 to-purple-600',
+      'PATIENCE': 'from-teal-500 to-teal-600',
+      'NEGOTIATION': 'from-gray-500 to-gray-600',
+      'PUBLIC_SPEAKING': 'from-cyan-500 to-blue-600',
+      'OTHER': 'from-gray-400 to-gray-500',
+    };
+    return colors[category] || 'from-gray-400 to-gray-500';
   };
 
-  const handleFilterChange = (key: keyof TraitFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
-  };
-
-  const handleSearch = (searchTerm: string) => {
-    handleFilterChange('search', searchTerm);
+  const getCategoryBadgeColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'CONFIDENCE': 'bg-blue-50 text-blue-700 border-blue-200',
+      'COMMUNICATION': 'bg-green-50 text-green-700 border-green-200',
+      'LEADERSHIP': 'bg-purple-50 text-purple-700 border-purple-200',
+      'CREATIVITY': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      'EMPATHY': 'bg-pink-50 text-pink-700 border-pink-200',
+      'HUMOR': 'bg-orange-50 text-orange-700 border-orange-200',
+      'ASSERTIVENESS': 'bg-red-50 text-red-700 border-red-200',
+      'CHARISMA': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'PATIENCE': 'bg-teal-50 text-teal-700 border-teal-200',
+      'NEGOTIATION': 'bg-gray-50 text-gray-700 border-gray-200',
+      'PUBLIC_SPEAKING': 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      'OTHER': 'bg-gray-50 text-gray-700 border-gray-200',
+    };
+    return colors[category] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
   const TraitCard: React.FC<{ trait: PersonalityTrait }> = ({ trait }) => {
-    const getCategoryColor = (category: string) => {
-      const colors: Record<string, string> = {
-        'CONFIDENCE': 'bg-blue-100 text-blue-800',
-        'COMMUNICATION': 'bg-green-100 text-green-800',
-        'LEADERSHIP': 'bg-purple-100 text-purple-800',
-        'CREATIVITY': 'bg-yellow-100 text-yellow-800',
-        'EMPATHY': 'bg-pink-100 text-pink-800',
-        'HUMOR': 'bg-orange-100 text-orange-800',
-        'ASSERTIVENESS': 'bg-red-100 text-red-800',
-        'CHARISMA': 'bg-indigo-100 text-indigo-800',
-        'PATIENCE': 'bg-teal-100 text-teal-800',
-        'NEGOTIATION': 'bg-gray-100 text-gray-800',
-        'PUBLIC_SPEAKING': 'bg-cyan-100 text-cyan-800',
-        'OTHER': 'bg-gray-100 text-gray-800',
-      };
-      return colors[category] || 'bg-gray-100 text-gray-800';
-    };
-
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-        <div className="flex items-start justify-between mb-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(trait.category)}`}>
-            {trait.category.replace(/_/g, ' ')}
-          </span>
-          {trait.verified && (
-            <CheckCircle className="h-5 w-5 text-green-500" />
-          )}
-        </div>
-
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-          {trait.name}
-        </h3>
+      <div className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+        {/* Gradient header */}
+        <div className={`h-2 bg-gradient-to-r ${getCategoryColor(trait.category)}`}></div>
         
-        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-          {trait.description}
-        </p>
-
-        {/* Provider */}
-        <div className="flex items-center space-x-3 mb-4">
-          {trait.owner?.avatar ? (
-            <img
-              src={trait.owner.avatar}
-              alt={`${trait.owner.firstName} ${trait.owner.lastName}`}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-              {getInitials(trait.owner?.firstName || '', trait.owner?.lastName || '')}
-            </div>
-          )}
-          <div>
-            <p className="text-sm font-medium text-gray-900">
-              {trait.owner?.firstName} {trait.owner?.lastName}
-            </p>
-            <p className="text-xs text-gray-500">@{trait.owner?.username}</p>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-          <div className="flex items-center space-x-1">
-            <Star className="h-4 w-4 text-yellow-400" />
-            <span>{trait.averageRating.toFixed(1)}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Users className="h-4 w-4" />
-            <span>{trait.totalRentals}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Clock className="h-4 w-4" />
-            <span>{trait.successRate}%</span>
-          </div>
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <span className="text-xl font-bold text-gray-900">
-              {formatCurrency(trait.hourlyRate)}
+        <div className="p-6">
+          {/* Header with category and verification */}
+          <div className="flex items-start justify-between mb-4">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getCategoryBadgeColor(trait.category)}`}>
+              <Sparkles className="h-3 w-3 mr-1" />
+              {trait.category.replace(/_/g, ' ')}
             </span>
-            <span className="text-sm text-gray-600">/hr</span>
+            <div className="flex items-center space-x-2">
+              {trait.verified && (
+                <div className="relative group">
+                  <CheckCircle className="h-5 w-5 text-emerald-500" />
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    Verified Provider
+                  </div>
+                </div>
+              )}
+              <button 
+                className="text-gray-400 hover:text-red-500 transition-colors"
+                title="Save to favorites"
+                aria-label="Save trait to favorites"
+              >
+                <Heart className="h-5 w-5" />
+              </button>
+            </div>
           </div>
-          <span className="text-xs text-gray-500">
-            {formatRelativeTime(trait.createdAt)}
-          </span>
-        </div>
 
-        {/* Actions */}
-        <div className="flex space-x-2">
-          <Button
-            variant="primary"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.location.href = `/traits/${trait.id}`;
-              }
-            }}
-          >
-            View Details
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!trait.available}
-          >
-            {trait.available ? 'Book Now' : 'Unavailable'}
-          </Button>
+          {/* Title */}
+          <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+            {trait.name}
+          </h3>
+          
+          {/* Description */}
+          <p className="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed">
+            {trait.description}
+          </p>
+
+          {/* Provider info */}
+          <div className="flex items-center space-x-3 mb-6 p-3 bg-gray-50 rounded-xl">
+            {trait.owner?.avatar ? (
+              <img
+                src={trait.owner.avatar}
+                alt={`${trait.owner.firstName} ${trait.owner.lastName}`}
+                className="h-10 w-10 rounded-full object-cover ring-2 ring-white"
+              />
+            ) : (
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                {getInitials(trait.owner?.firstName || '', trait.owner?.lastName || '')}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {trait.owner?.firstName} {trait.owner?.lastName}
+              </p>
+              <p className="text-xs text-gray-500 truncate">@{trait.owner?.username}</p>
+            </div>
+            {trait.owner?.verified && (
+              <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-1 mb-1">
+                <Star className="h-4 w-4 text-yellow-400" />
+                <span className="text-sm font-bold text-gray-900">{trait.averageRating.toFixed(1)}</span>
+              </div>
+              <p className="text-xs text-gray-500">Rating</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-1 mb-1">
+                <Users className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-bold text-gray-900">{trait.totalRentals}</span>
+              </div>
+              <p className="text-xs text-gray-500">Students</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-1 mb-1">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-bold text-gray-900">{trait.successRate}%</span>
+              </div>
+              <p className="text-xs text-gray-500">Success</p>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <span className="text-2xl font-bold text-gray-900">
+                {formatCurrency(trait.hourlyRate)}
+              </span>
+              <span className="text-sm text-gray-500 ml-1">/hour</span>
+              {trait.dailyRate && (
+                <div className="text-sm text-gray-600 mt-1">
+                  {formatCurrency(trait.dailyRate)}/day
+                </div>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-500 mb-1">Listed</div>
+              <div className="text-xs text-gray-600">
+                {formatRelativeTime(trait.createdAt)}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = `/traits/${trait.id}`;
+                }
+              }}
+            >
+              View Details & Book
+            </Button>
+            
+            {trait.available ? (
+              <div className="flex items-center justify-center text-xs text-green-600 font-medium">
+                <div className="h-2 w-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                Available for {trait.maxUsers} student{trait.maxUsers !== 1 ? 's' : ''}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center text-xs text-red-600 font-medium">
+                <div className="h-2 w-2 bg-red-500 rounded-full mr-2"></div>
+                Currently Unavailable
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   };
 
-  const FilterPanel: React.FC = () => (
+  const FilterSidebar = () => (
     <div className={`
       ${showFilters ? 'block' : 'hidden'} lg:block
-      bg-white rounded-lg shadow-sm border border-gray-200 p-6
+      bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-fit sticky top-6
     `}>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-gray-900">Filters</h3>
+        <Filter className="h-5 w-5 text-gray-400" />
+      </div>
       
       {/* Category Filter */}
       <div className="mb-6">
-        <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
           Category
         </label>
         <select
-          id="category-filter"
-          value={filters.category || ''}
-          onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
           aria-label="Filter by trait category"
+          title="Select a trait category to filter results"
         >
           <option value="">All Categories</option>
           {Object.values(TraitCategory).map(category => (
@@ -521,154 +334,145 @@ const TraitsBrowsePage: React.FC = () => {
         </select>
       </div>
 
+      {/* Quick Filters */}
+      <div className="mb-6">
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+          Quick Filters
+        </label>
+        <div className="space-y-3">
+          <label className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+            <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+            <span className="ml-3 text-sm text-gray-700">Verified providers only</span>
+          </label>
+          <label className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+            <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+            <span className="ml-3 text-sm text-gray-700">Available now</span>
+          </label>
+          <label className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+            <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+            <span className="ml-3 text-sm text-gray-700">High success rate (90%+)</span>
+          </label>
+        </div>
+      </div>
+
       {/* Price Range */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
           Max Price (per hour)
         </label>
         <Input
           type="number"
-          placeholder="$50"
-          value={filters.maxPrice?.toString() || ''}
-          onChange={(value) => handleFilterChange('maxPrice', value ? parseInt(value) * 100 : undefined)}
+          placeholder="$100"
+          className="bg-gray-50 border-gray-200 focus:bg-white"
         />
-      </div>
-
-      {/* Rating Filter */}
-      <div className="mb-6">
-        <label htmlFor="rating-filter" className="block text-sm font-medium text-gray-700 mb-2">
-          Minimum Rating
-        </label>
-        <select
-          id="rating-filter"
-          value={filters.minRating?.toString() || ''}
-          onChange={(e) => handleFilterChange('minRating', e.target.value ? parseFloat(e.target.value) : undefined)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          aria-label="Filter by minimum rating"
-        >
-          <option value="">Any Rating</option>
-          <option value="4">4+ Stars</option>
-          <option value="3">3+ Stars</option>
-          <option value="2">2+ Stars</option>
-        </select>
-      </div>
-
-      {/* Verified Only */}
-      <div className="mb-6">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={filters.verified === true}
-            onChange={(e) => handleFilterChange('verified', e.target.checked ? true : undefined)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-sm text-gray-700">Verified providers only</span>
-        </label>
-      </div>
-
-      {/* Available Only */}
-      <div className="mb-6">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={filters.available === true}
-            onChange={(e) => handleFilterChange('available', e.target.checked ? true : undefined)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-sm text-gray-700">Available now</span>
-        </label>
-      </div>
-
-      {/* Sort Options */}
-      <div className="mb-6">
-        <label htmlFor="sort-filter" className="block text-sm font-medium text-gray-700 mb-2">
-          Sort By
-        </label>
-        <select
-          id="sort-filter"
-          value={filters.sortBy || 'newest'}
-          onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          aria-label="Sort traits by"
-        >
-          <option value="newest">Newest First</option>
-          <option value="rating">Highest Rated</option>
-          <option value="price">Lowest Price</option>
-          <option value="popularity">Most Popular</option>
-        </select>
       </div>
 
       <Button
         variant="outline"
         size="sm"
-        className="w-full"
+        className="w-full border-gray-200 hover:border-gray-300"
         onClick={() => {
-          setFilters({
-            search: '',
-            category: undefined,
-            minRating: undefined,
-            maxPrice: undefined,
-            verified: undefined,
-            available: true,
-            sortBy: 'newest',
-            sortOrder: 'desc'
-          });
+          setSelectedCategory('');
+          setSearchQuery('');
         }}
       >
-        Clear Filters
+        Clear All Filters
       </Button>
     </div>
   );
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Browse Personality Traits</h1>
-            <p className="text-gray-600 mt-1">
-              Discover and rent personality traits from verified providers
-            </p>
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Enhanced Header */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-3xl p-8 border border-gray-100">
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div className="space-y-2">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  Discover Personality Traits
+                </h1>
+                <p className="text-lg text-gray-600 max-w-2xl">
+                  Transform yourself with expert-guided personality development from verified providers
+                </p>
+                <div className="flex items-center space-x-6 text-sm text-gray-500 mt-4">
+                  <div className="flex items-center space-x-2">
+                    <Award className="h-4 w-4 text-blue-500" />
+                    <span>500+ Verified Traits</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-4 w-4 text-green-500" />
+                    <span>10,000+ Students</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span>4.9 Avg Rating</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                  className="border-gray-200 hover:border-gray-300"
+                >
+                  {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="lg:hidden border-gray-200 hover:border-gray-300"
+                >
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </div>
+            </div>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-            >
-              {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden"
-            >
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-100 rounded-full opacity-20"></div>
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-purple-100 rounded-full opacity-20"></div>
+        </div>
+
+        {/* Enhanced Search Bar */}
+        <div className="relative max-w-3xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Search for confidence, leadership, charisma, or any skill..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-6 py-4 text-lg border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all"
+            />
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative max-w-2xl">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <input
-            type="text"
-            placeholder="Search traits, providers, or skills..."
-            value={filters.search || ''}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-          />
-        </div>
-
-        {/* Results Info */}
+        {/* Sort Options */}
         <div className="flex items-center justify-between">
-          <p className="text-gray-600">
-            {loading ? 'Loading...' : `${pagination.total} traits found`}
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              aria-label="Sort traits by different criteria"
+              title="Choose how to sort the trait results"
+            >
+              <option value="newest">Newest First</option>
+              <option value="rating">Highest Rated</option>
+              <option value="price">Lowest Price</option>
+              <option value="popularity">Most Popular</option>
+            </select>
+          </div>
+          
+          <p className="text-sm text-gray-600">
+            {loading ? 'Loading...' : `${traits.length} traits available`}
           </p>
         </div>
 
@@ -676,7 +480,7 @@ const TraitsBrowsePage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <FilterPanel />
+            <FilterSidebar />
           </div>
 
           {/* Traits Grid */}
@@ -684,7 +488,7 @@ const TraitsBrowsePage: React.FC = () => {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+                  <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
                     <div className="h-4 bg-gray-200 rounded mb-4"></div>
                     <div className="h-6 bg-gray-200 rounded mb-2"></div>
                     <div className="h-16 bg-gray-200 rounded mb-4"></div>
@@ -693,56 +497,23 @@ const TraitsBrowsePage: React.FC = () => {
                 ))}
               </div>
             ) : traits.length > 0 ? (
-              <>
-                <div className={`
-                  ${viewMode === 'grid' 
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
-                    : 'space-y-4'
-                  }
-                `}>
-                  {traits.map((trait) => (
-                    <TraitCard key={trait.id} trait={trait} />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                  <div className="flex items-center justify-center space-x-2 mt-8">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!pagination.hasPrevPage}
-                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    >
-                      Previous
-                    </Button>
-                    
-                    <span className="text-sm text-gray-600">
-                      Page {pagination.page} of {pagination.totalPages}
-                    </span>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!pagination.hasNextPage}
-                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {traits.map((trait) => (
+                  <TraitCard key={trait.id} trait={trait} />
+                ))}
+              </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <Search className="h-12 w-12 mx-auto" />
+              <div className="text-center py-16">
+                <div className="text-gray-400 mb-6">
+                  <Search className="h-16 w-16 mx-auto" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No traits found</h3>
-                <p className="text-gray-600 mb-6">
-                  Try adjusting your search criteria or filters
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No traits found</h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  Try adjusting your search criteria or explore different categories to find the perfect trait for you.
                 </p>
                 <Button
                   variant="primary"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   onClick={() => {
                     if (typeof window !== 'undefined') {
                       window.location.href = '/traits/create';
@@ -760,4 +531,4 @@ const TraitsBrowsePage: React.FC = () => {
   );
 };
 
-export default TraitsBrowsePage;
+export default ModernizedTraitsBrowsePage;
