@@ -263,12 +263,12 @@ const DashboardPage: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-8">
-        {/* Header with Live Clock */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         {/* Header with Live Clock */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-2">
             <LiveClock />
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Today's Focus</h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-xl">
@@ -284,6 +284,19 @@ const DashboardPage: React.FC = () => {
                   <p className="text-sm font-semibold text-gray-900">Practice Presentation</p>
                   <p className="text-xs text-gray-600">4:30 PM - 5:30 PM</p>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Stats</h3>
+            <div className="space-y-3">
+              <div className="text-center">
+                <div className="text-xl font-bold text-blue-600">23</div>
+                <div className="text-xs text-gray-500">Day Streak</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-green-600">92%</div>
+                <div className="text-xs text-gray-500">Success Rate</div>
               </div>
             </div>
           </div>
