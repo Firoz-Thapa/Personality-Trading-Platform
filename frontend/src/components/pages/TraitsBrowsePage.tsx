@@ -22,7 +22,61 @@ import Input from '@/components/ui/Input';
 import { PersonalityTrait, TraitCategory } from '@/lib/types';
 import { formatCurrency, formatRelativeTime, getInitials } from '@/lib/utils';
 
-// Enhanced styling with modern design patterns
+const TraitCardSkeleton: React.FC = () => {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+
+      <div className="h-2 bg-gray-200"></div>
+
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="h-6 bg-gray-200 rounded-full w-24"></div>
+          <div className="h-5 w-5 bg-gray-200 rounded-full"></div>
+        </div>
+
+        <div className="h-6 bg-gray-200 rounded mb-3 w-3/4"></div>
+
+        <div className="space-y-2 mb-6">
+          <div className="h-4 bg-gray-200 rounded w-full"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+        </div>
+
+        <div className="flex items-center space-x-3 mb-6 p-3 bg-gray-50 rounded-xl">
+          <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+          <div className="flex-1">
+            <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-16"></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="text-center">
+              <div className="h-6 bg-gray-200 rounded w-12 mx-auto mb-1"></div>
+              <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-20 mb-1"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+          </div>
+          <div className="text-right">
+            <div className="h-3 bg-gray-200 rounded w-12 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-16"></div>
+          </div>
+        </div>
+
+        <div className="h-12 bg-gray-200 rounded-xl w-full mb-3"></div>
+        <div className="h-4 bg-gray-200 rounded w-32 mx-auto"></div>
+      </div>
+    </div>
+  );
+};
+
 const ModernizedTraitsBrowsePage: React.FC = () => {
   const [traits, setTraits] = useState<PersonalityTrait[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,11 +216,9 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
   const TraitCard: React.FC<{ trait: PersonalityTrait }> = ({ trait }) => {
     return (
       <div className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-        {/* Gradient header */}
         <div className={`h-2 bg-gradient-to-r ${getCategoryColor(trait.category)}`}></div>
         
         <div className="p-6">
-          {/* Header with category and verification */}
           <div className="flex items-start justify-between mb-4">
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getCategoryBadgeColor(trait.category)}`}>
               <Sparkles className="h-3 w-3 mr-1" />
@@ -191,17 +243,14 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Title */}
           <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
             {trait.name}
           </h3>
-          
-          {/* Description */}
+
           <p className="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed">
             {trait.description}
           </p>
 
-          {/* Provider info */}
           <div className="flex items-center space-x-3 mb-6 p-3 bg-gray-50 rounded-xl">
             {trait.owner?.avatar ? (
               <img
@@ -225,7 +274,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
             )}
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="text-center">
               <div className="flex items-center justify-center space-x-1 mb-1">
@@ -250,7 +298,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Price */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <span className="text-2xl font-bold text-gray-900">
@@ -271,7 +318,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="space-y-3">
             <Button
               variant="primary"
@@ -312,8 +358,7 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
         <h3 className="text-lg font-bold text-gray-900">Filters</h3>
         <Filter className="h-5 w-5 text-gray-400" />
       </div>
-      
-      {/* Category Filter */}
+
       <div className="mb-6">
         <label className="block text-sm font-semibold text-gray-700 mb-3">
           Category
@@ -334,7 +379,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
         </select>
       </div>
 
-      {/* Quick Filters */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-gray-700 mb-3">
           Quick Filters
@@ -355,7 +399,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Price Range */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-gray-700 mb-3">
           Max Price (per hour)
@@ -384,7 +427,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Enhanced Header */}
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-3xl p-8 border border-gray-100">
           <div className="relative z-10">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -434,12 +476,10 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
             </div>
           </div>
           
-          {/* Decorative elements */}
           <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-100 rounded-full opacity-20"></div>
           <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-purple-100 rounded-full opacity-20"></div>
         </div>
 
-        {/* Enhanced Search Bar */}
         <div className="relative max-w-3xl mx-auto">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -453,7 +493,6 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sort Options */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">Sort by:</span>
@@ -476,24 +515,16 @@ const ModernizedTraitsBrowsePage: React.FC = () => {
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
           <div className="lg:col-span-1">
             <FilterSidebar />
           </div>
 
-          {/* Traits Grid */}
           <div className="lg:col-span-3">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-16 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-8 bg-gray-200 rounded"></div>
-                  </div>
+                  <TraitCardSkeleton key={i} />
                 ))}
               </div>
             ) : traits.length > 0 ? (
