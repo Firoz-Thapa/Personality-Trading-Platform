@@ -129,9 +129,9 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, title, value, change, c
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1 group">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl bg-gradient-to-br ${colorClasses[color]} text-white`}>
+        <div className={`p-3 rounded-xl bg-gradient-to-br ${colorClasses[color]} text-white transition-transform duration-300 group-hover:scale-105`}>
           <Icon className="h-6 w-6" />
         </div>
         {change && (
@@ -141,7 +141,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, title, value, change, c
         )}
       </div>
       <div className="space-y-1">
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-gray-700">{value}</p>
         <p className="text-sm text-gray-600">{title}</p>
       </div>
     </div>
