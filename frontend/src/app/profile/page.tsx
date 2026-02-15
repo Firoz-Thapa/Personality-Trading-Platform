@@ -88,7 +88,7 @@ const ProfilePage: React.FC = () => {
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Settings</h1>
           <p className="text-gray-600">Manage your account information and preferences</p>
         </div>
@@ -96,23 +96,23 @@ const ProfilePage: React.FC = () => {
         {/* Message Alert */}
         {message && (
           <div className={`
-            flex items-center p-4 rounded-lg border
+            flex items-center p-4 rounded-lg border transition-all duration-300 animate-in fade-in slide-in-from-top-2
             ${message.type === 'success' 
               ? 'bg-green-50 border-green-200 text-green-800' 
               : 'bg-red-50 border-red-200 text-red-800'
             }
           `}>
             {message.type === 'success' ? (
-              <CheckCircle className="h-5 w-5 mr-2" />
+              <CheckCircle className="h-5 w-5 mr-2 animate-in zoom-in duration-300" />
             ) : (
-              <AlertCircle className="h-5 w-5 mr-2" />
+              <AlertCircle className="h-5 w-5 mr-2 animate-in zoom-in duration-300" />
             )}
             {message.text}
           </div>
         )}
 
         {/* Main Profile Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md">
           <div className="flex items-start justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Personal Information</h2>
             {!isEditing && (
@@ -120,7 +120,7 @@ const ProfilePage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="flex items-center"
+                className="flex items-center transition-all duration-200 hover:scale-105"
               >
                 <Edit3 className="h-4 w-4 mr-2" />
                 Edit Profile
@@ -136,16 +136,16 @@ const ProfilePage: React.FC = () => {
                   <img
                     src={user.avatar}
                     alt={`${user.firstName} ${user.lastName}`}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200 transition-all duration-300 hover:border-blue-400 hover:scale-105"
                   />
                 ) : (
-                  <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-gray-200">
+                  <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-gray-200 transition-all duration-300 hover:border-blue-400 hover:scale-105 hover:bg-blue-700">
                     {getInitials(user.firstName, user.lastName)}
                   </div>
                 )}
               </div>
               
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-gray-500 mt-2 transition-colors duration-200">
                 Avatar upload coming soon
               </p>
             </div>
@@ -153,7 +153,7 @@ const ProfilePage: React.FC = () => {
             {/* Form Section */}
             <div className="md:col-span-2 space-y-4">
               {isEditing ? (
-                <>
+                <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                   {/* Edit Mode */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <Input
@@ -179,7 +179,7 @@ const ProfilePage: React.FC = () => {
                       onChange={(e) => handleInputChange('bio')(e.target.value)}
                       placeholder="Tell us about yourself..."
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     />
                   </div>
 
@@ -190,7 +190,7 @@ const ProfilePage: React.FC = () => {
                       onClick={handleSave}
                       loading={loading}
                       disabled={loading}
-                      className="flex items-center"
+                      className="flex items-center transition-all duration-200 hover:scale-105"
                     >
                       <Save className="h-4 w-4 mr-2" />
                       Save Changes
@@ -199,53 +199,54 @@ const ProfilePage: React.FC = () => {
                       variant="outline"
                       onClick={handleCancel}
                       disabled={loading}
+                      className="transition-all duration-200 hover:scale-105"
                     >
                       Cancel
                     </Button>
                   </div>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="animate-in fade-in slide-in-from-left-4 duration-300">
                   {/* View Mode */}
                   <div className="space-y-4">
-                    <div>
+                    <div className="transition-all duration-200 hover:translate-x-1">
                       <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
                       <p className="text-lg text-gray-900">{user.firstName} {user.lastName}</p>
                     </div>
 
-                    <div>
+                    <div className="transition-all duration-200 hover:translate-x-1">
                       <label className="block text-sm font-medium text-gray-500 mb-1">Username</label>
                       <p className="text-lg text-gray-900">@{user.username}</p>
                     </div>
 
-                    <div>
+                    <div className="transition-all duration-200 hover:translate-x-1">
                       <label className="block text-sm font-medium text-gray-500 mb-1">Bio</label>
                       <p className="text-gray-900">
                         {user.bio || 'No bio added yet'}
                       </p>
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
         </div>
 
         {/* Account Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Account Information</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="flex items-center space-x-3">
-              <Mail className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center space-x-3 transition-all duration-200 hover:translate-x-1 hover:bg-gray-50 p-3 rounded-lg">
+              <Mail className="h-5 w-5 text-gray-400 transition-colors duration-200" />
               <div>
                 <p className="text-sm font-medium text-gray-500">Email Address</p>
                 <p className="text-gray-900">{user.email}</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <Calendar className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center space-x-3 transition-all duration-200 hover:translate-x-1 hover:bg-gray-50 p-3 rounded-lg">
+              <Calendar className="h-5 w-5 text-gray-400 transition-colors duration-200" />
               <div>
                 <p className="text-sm font-medium text-gray-500">Member Since</p>
                 <p className="text-gray-900">
@@ -258,19 +259,19 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <User className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center space-x-3 transition-all duration-200 hover:translate-x-1 hover:bg-gray-50 p-3 rounded-lg">
+              <User className="h-5 w-5 text-gray-400 transition-colors duration-200" />
               <div>
                 <p className="text-sm font-medium text-gray-500">Account Status</p>
                 <div className="flex items-center">
                   {user.verified ? (
                     <>
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-1 transition-transform duration-200 hover:scale-110" />
                       <span className="text-green-700">Verified</span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="h-4 w-4 text-yellow-500 mr-1" />
+                      <AlertCircle className="h-4 w-4 text-yellow-500 mr-1 transition-transform duration-200 hover:scale-110" />
                       <span className="text-yellow-700">Unverified</span>
                     </>
                   )}
@@ -281,17 +282,17 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           
           <div className="grid md:grid-cols-3 gap-4">
-            <Button variant="outline" className="justify-center">
+            <Button variant="outline" className="justify-center transition-all duration-200 hover:scale-105 hover:border-blue-400 hover:text-blue-600">
               Take Personality Assessment
             </Button>
-            <Button variant="outline" className="justify-center">
+            <Button variant="outline" className="justify-center transition-all duration-200 hover:scale-105 hover:border-blue-400 hover:text-blue-600">
               Browse Traits
             </Button>
-            <Button variant="outline" className="justify-center">
+            <Button variant="outline" className="justify-center transition-all duration-200 hover:scale-105 hover:border-blue-400 hover:text-blue-600">
               View Analytics
             </Button>
           </div>
